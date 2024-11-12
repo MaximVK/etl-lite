@@ -3,11 +3,20 @@ from typing import Any, Dict, List, Tuple, Union, Optional, Literal, Callable, T
 from pathlib import Path
 import datetime
 from dataclasses import dataclass
+from typing import NamedTuple
 
 # Basic types
 type Number = int | float
 type RAG = Literal['red', 'green', 'amber']
-type DbTable = tuple[str, str]
+
+
+class DbTable(NamedTuple):
+    schema: str
+    table: str
+
+    def __str__(self) -> str:
+        return f"{self.schema}.{self.table}"
+
 type Query = str
 type DbType = int | float | str | bool | datetime.datetime | datetime.date
 type CHArrayType = list[DbType] | dict[str, CHArrayType]
@@ -34,6 +43,7 @@ type ClickhouseTargetTable = tuple[DbTable, ClickhouseTableEngine]
 type ExcelFile = Path
 type CSVFile = Path
 type Target = ClickhouseTargetTable | ExcelFile | CSVFile
+type ValidateFunc = Callable[[Number], RAG]
 
 # Processing strategies
 type TargetStrategy = Literal['replace', 'append']
@@ -44,16 +54,19 @@ type ProcessingStrategy = Literal['one_go', 'incremental']
 # Not perfect, as I can't contraint P to be CHType
 type ApplyParametersFunc[**P] = Callable[Concatenate[DbTable, P], Query | None]
 
+
 @dataclass(frozen=True)
 class DataQualityTestTemplate:
     name: str
     get_query: ApplyParametersFunc
 
+
 @dataclass(frozen=True)
 class DataQualityTest:
     name: str
-    query: ApplyParametersFunc
-    validate_func: Callable[[Number, Number | None], RAG]
+    query: Query
+    validate_func: ValidateFunc
+
 
 # Invariants, the same as test, but different scope
 type DataInvariantTemplate =  DataQualityTestTemplate
